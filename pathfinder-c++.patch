@@ -1,0 +1,70 @@
+--- pathfinder-1.1.7/downloader.cc.orig	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/downloader.cc	2014-12-31 22:03:36.811727721 +0100
+@@ -37,9 +37,9 @@ Downloader::Downloader(WvStringParm _url
+         log("Kicking off download of %s.\n", url);
+         stream = pool->addurl(url, _method, _headers, _content_source);
+         stream->setcallback(wv::bind(&Downloader::download_cb, this, 
+-                                     wv::ref(*stream)));
++                                     stream));
+         stream->setclosecallback(wv::bind(&Downloader::download_closed_cb, this, 
+-                                          wv::ref(*stream)));
++                                          stream));
+         WvIStreamList::globallist.append(stream, true, WvString("download url %s", 
+                                                                  url));
+     }
+@@ -69,14 +69,14 @@ Downloader::~Downloader()
+ }
+ 
+ 
+-void Downloader::download_cb(WvStream &s)
++void Downloader::download_cb(xplc_ptr<WvBufUrlStream> s)
+ {
+     char buf[1024];
+     size_t numread = 0;
+     size_t totalread = 0;
+-    while (s.isreadable() && totalread < 32768)
++    while (s->isreadable() && totalread < 32768)
+     {
+-        numread = s.read(buf, 1024);
++        numread = s->read(buf, 1024);
+         if (numread)
+             downloadbuf.put(buf, numread);
+         totalread += numread;
+@@ -84,20 +84,20 @@ void Downloader::download_cb(WvStream &s
+ }
+ 
+ 
+-void Downloader::download_closed_cb(WvStream &s)
++void Downloader::download_closed_cb(xplc_ptr<WvBufUrlStream> s)
+ {
+     WvError err;    
+     WvString mimetype = WvString::null;
+     // as of this writing, errors are not properly set on a urlstream
+     // when there's a problem, so we have to resort to hacks to validate stuff
+ #if WVHTTPPOOLFIXED
+-    if (!s.isok() && s.geterr())
++    if (!s->isok() && s->geterr())
+ #else
+     if (0)
+ #endif
+     {
+-        log("Didn't download %s successfully (%s).\n", url, s.errstr());
+-        err.seterr_both(s.geterr(), s.errstr());
++        log("Didn't download %s successfully (%s).\n", url, s->errstr());
++        err.seterr_both(s->geterr(), s->errstr());
+         if (finished_cb)
+             finished_cb(url, mimetype, downloadbuf, err);
+         return;
+--- pathfinder-1.1.7/downloader.h.orig	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/downloader.h	2014-12-31 22:00:18.518402719 +0100
+@@ -33,8 +33,8 @@ public:
+ 
+ private:
+     WvDynBuf downloadbuf;
+-    void download_cb(WvStream &s);
+-    void download_closed_cb(WvStream &s);
++    void download_cb(xplc_ptr<WvBufUrlStream> s);
++    void download_closed_cb(xplc_ptr<WvBufUrlStream> s);
+     void download_ldap();
+     
+     WvString url;

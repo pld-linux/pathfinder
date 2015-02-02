@@ -1,0 +1,20 @@
+--- pathfinder-1.1.7/pathfinder-nss.pc.in.orig	2007-12-24 22:50:12.000000000 +0100
++++ pathfinder-1.1.7/pathfinder-nss.pc.in	2015-02-02 20:11:36.785671902 +0100
+@@ -1,6 +1,6 @@
+ prefix=@CMAKE_INSTALL_PREFIX@
+ exec_prefix=${prefix}
+-libdir=${exec_prefix}/lib
++libdir=${exec_prefix}/lib@LIB_SUFFIX@
+ includedir=${prefix}/include
+ 
+ Name: NSS Pathfinder Plugin Library
+--- pathfinder-1.1.7/pathfinder-openssl.pc.in.orig	2007-07-27 21:52:00.000000000 +0200
++++ pathfinder-1.1.7/pathfinder-openssl.pc.in	2015-02-02 20:11:46.849004812 +0100
+@@ -1,6 +1,6 @@
+ prefix=@CMAKE_INSTALL_PREFIX@
+ exec_prefix=${prefix}
+-libdir=${exec_prefix}/lib
++libdir=${exec_prefix}/lib@LIB_SUFFIX@
+ includedir=${prefix}/include
+ 
+ Name: OpenSSL Pathfinder Plugin Library
