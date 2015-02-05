@@ -12,6 +12,9 @@ Group:		Libraries
 #Source0Download: http://code.google.com/p/pathfinder-pki/downloads/list
 Source0:	http://pathfinder-pki.googlecode.com/files/%{name}-%{version}-Source.tar.gz
 # Source0-md5:	8307b2297c1efa6c526ce4b656a2e4aa
+Source1:	pathfinderd.init
+Source2:	pathfinderd.sysconfig
+Source3:	pathfinderd.ini
 Patch0:		%{name}-c++.patch
 Patch1:		%{name}-link.patch
 Patch2:		%{name}-libdir.patch
@@ -23,7 +26,18 @@ BuildRequires:	nss-devel
 BuildRequires:	openldap-devel
 BuildRequires:	openssl-devel
 BuildRequires:	pkgconfig
+BuildRequires:	rpmbuild(macros) >= 1.228
 BuildRequires:	wvstreams-devel
+Requires(pre):	/bin/id
+Requires(pre):	/usr/bin/getgid
+Requires(pre):	/usr/sbin/groupadd
+Requires(pre):	/usr/sbin/useradd
+Requires(post,preun):	/sbin/chkconfig
+Requires(postun):	/usr/sbin/groupdel
+Requires(postun):	/usr/sbin/userdel
+Requires:	rc-scripts
+Provides:	group(pathfinderd)
+Provides:	user(pathfinderd)
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		specflags	-fpermissive
@@ -175,8 +189,40 @@ rm -rf $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
 
+install -d $RPM_BUILD_ROOT/etc/pki/pathfinderd/trusted-certs
+
+install -D %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/pathfinderd
+install -D %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/pathfinderd
+install -D %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/pathfinderd.ini
+
+install -d $RPM_BUILD_ROOT%{systemdtmpfilesdir}
+cat >$RPM_BUILD_ROOT%{systemdtmpfilesdir}/pathfinderd.conf <<EOF
+D /var/run/pathfinderd 0755 pathfinderd pathfinderd -
+EOF
+install -d $RPM_BUILD_ROOT/var/run/pathfinderd
+
 %clean
 rm -rf $RPM_BUILD_ROOT
+
+%pre
+%groupadd -g 314 pathfinderd
+%useradd -u 314 -d /var/run/pathfinderd -g pathfinderd -c "PathFinder User" -s /bin/false pathfinderd 
+
+%post
+/sbin/chkconfig --add pathfinderd
+%service pathfinderd restart
+
+%preun
+if [ "$1" = "0" ]; then
+	%service -q pathfinderd stop
+	/sbin/chkconfig --del pathfinderd
+fi
+
+%postun
+if [ "$1" = "0" ]; then
+	%userremove pathfinderd
+	%groupremove pathfinderd
+fi
 
 %post	nss -p /sbin/ldconfig
 %postun	nss -p /sbin/ldconfig
@@ -191,6 +237,13 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/pathverify
 %attr(755,root,root) %{_sbindir}/pathfinderd
 /etc/dbus-1/system.d/pathfinderd.conf
+%dir /etc/pki/pathfinderd
+%dir /etc/pki/pathfinderd/trusted-certs
+%attr(754,root,root) /etc/rc.d/init.d/pathfinderd
+%config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/pathfinderd
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/pathfinderd.ini
+%{systemdtmpfilesdir}/pathfinderd.conf
+%attr(755,pathfinderd,pathfinderd) %dir /var/run/pathfinderd
 %{_mandir}/man8/pathfinderd.8*
 
 %files devel

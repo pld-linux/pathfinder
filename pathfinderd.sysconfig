@@ -1,0 +1,2 @@
+RUNUSER="pathfinderd"
+RUNFLAGS="-c ini:/etc/pathfinderd.ini -d"
