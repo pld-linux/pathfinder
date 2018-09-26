@@ -1,0 +1,419 @@
+--- pathfinder-1.1.7.orig/pathfinder.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/pathfinder.cc	2018-09-26 16:03:37.083377097 +0200
+@@ -15,11 +15,11 @@
+ using namespace boost;
+ using namespace std;
+ 
+-PathFinder::PathFinder(shared_ptr<WvX509> &_cert, 
+-                       shared_ptr<WvX509Store> &_trusted_store, 
+-                       shared_ptr<WvX509Store> &_intermediate_store,
+-                       shared_ptr<WvX509Store> &_fetched_store,
+-                       shared_ptr<WvCRLCache> &_crlcache,
++PathFinder::PathFinder(boost::shared_ptr<WvX509> &_cert, 
++                       boost::shared_ptr<WvX509Store> &_trusted_store, 
++                       boost::shared_ptr<WvX509Store> &_intermediate_store,
++                       boost::shared_ptr<WvX509Store> &_fetched_store,
++                       boost::shared_ptr<WvCRLCache> &_crlcache,
+                        uint32_t _validation_flags,
+                        bool _check_ocsp,
+                        UniConf &_cfg,
+@@ -98,7 +98,7 @@
+ }
+ 
+ 
+-void PathFinder::check_cert(shared_ptr<WvX509> &cert)
++void PathFinder::check_cert(boost::shared_ptr<WvX509> &cert)
+ {
+     if (!cert->isok())
+     {
+@@ -180,7 +180,7 @@
+     {
+         log("Getting revocation information for path of length %s.\n",
+                 path->pathsize());
+-        shared_ptr<WvX509> prev = cert;
++        boost::shared_ptr<WvX509> prev = cert;
+         
+         bool made_revocationfinder=false;
+         for (WvX509List::iterator i = path->begin(); i != path->end(); i++)
+@@ -214,7 +214,7 @@
+ }
+ 
+ 
+-void PathFinder::get_signer(shared_ptr<WvX509> &cert) 
++void PathFinder::get_signer(boost::shared_ptr<WvX509> &cert) 
+ {
+     log("Attempting to get signer.\n");
+ 
+@@ -226,7 +226,7 @@
+         url_encode(cert->get_issuer(), "/="));
+     if (!!hardcoded_loc)
+     {
+-        shared_ptr<WvX509> cacert(new WvX509);
++        boost::shared_ptr<WvX509> cacert(new WvX509);
+         cacert->decode(guess_encoding(hardcoded_loc), hardcoded_loc);
+         
+         if (!cacert->isok())
+@@ -343,7 +343,7 @@
+ // 'cert'.  If it is, and we haven't used it before, then try building a
+ // path through it.  If that fails, pop back down to the same place and
+ // return.
+-void PathFinder::examine_signer(shared_ptr<WvX509> &i, shared_ptr<WvX509> &cert)
++void PathFinder::examine_signer(boost::shared_ptr<WvX509> &i, boost::shared_ptr<WvX509> &cert)
+ {
+     if (i->get_subject() == cert->get_issuer() &&
+         i->get_issuer() != cert->get_subject() &&
+@@ -367,7 +367,7 @@
+ }
+ 
+ 
+-void PathFinder::signer_download_finished_cb(shared_ptr<WvX509> &cert, 
++void PathFinder::signer_download_finished_cb(boost::shared_ptr<WvX509> &cert, 
+                                              WvStringParm urlstr, 
+                                              WvStringParm mimetype, WvBuf &buf, 
+                                              WvError _err)
+@@ -433,9 +433,9 @@
+ 	{
+ 	    for (j = 0; j < sk_X509_num(certs); j++)
+ 	    {
+-		shared_ptr<WvX509> x;
++		    boost::shared_ptr<WvX509> x;
+ 		X509 *_x = sk_X509_value(certs, j);
+-		x = shared_ptr<WvX509>(new WvX509(X509_dup(_x)));
++		x = boost::shared_ptr<WvX509>(new WvX509(X509_dup(_x)));
+                 //log("Taking a look (3) at %s issued by %s\n",
+                 //    x->get_subject(), x->get_issuer());
+ 		log("Extracting cert for %s from bundle.\n",
+@@ -453,7 +453,7 @@
+         return;
+     }
+ 
+-    shared_ptr<WvX509> cert2(new WvX509);
++    boost::shared_ptr<WvX509> cert2(new WvX509);
+     if (guess_encoding(buf) == WvX509::CertPEM)
+         cert2->decode(WvX509::CertPEM, buf);
+     else
+@@ -467,10 +467,10 @@
+ }
+ 
+ 
+-void PathFinder::get_revocation_info(shared_ptr<WvX509> &cert, 
+-                                     shared_ptr<WvX509> &signer)
++void PathFinder::get_revocation_info(boost::shared_ptr<WvX509> &cert, 
++                                     boost::shared_ptr<WvX509> &signer)
+ {
+-    shared_ptr<RevocationFinder> rf(
++    boost::shared_ptr<RevocationFinder> rf(
+         new RevocationFinder(cert, signer, path, crlcache, check_ocsp, cfg,
+                              wv::bind(&PathFinder::got_revocation_info, this,
+                                       _1, cert)));
+@@ -479,7 +479,7 @@
+ }
+ 
+ 
+-void PathFinder::got_revocation_info(WvError &err, shared_ptr<WvX509> &cert)
++void PathFinder::got_revocation_info(WvError &err, boost::shared_ptr<WvX509> &cert)
+ {
+     if (err.geterr())
+     {
+@@ -541,7 +541,7 @@
+             // as written.  When re-enabling the ldap download code,
+             // definitely keep that in mind...
+         {
+-            shared_ptr<Downloader> d(new Downloader(url, pool, _cb));
++            boost::shared_ptr<Downloader> d(new Downloader(url, pool, _cb));
+             downloaders.push_back(d);
+ 
+             // do NOT return until our downloader is done and the callback
+--- pathfinder-1.1.7.orig/pathserver.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/pathserver.cc	2018-09-26 16:04:31.822895256 +0200
+@@ -14,10 +14,10 @@
+ using namespace std;
+ 
+ 
+-PathServer::PathServer(shared_ptr<WvX509Store> _trusted_store,
+-                       shared_ptr<WvX509Store> _intermediate_store,
+-                       shared_ptr<WvX509Store> _fetched_store,
+-                       shared_ptr<WvCRLCache> _crlcache,
++PathServer::PathServer(boost::shared_ptr<WvX509Store> _trusted_store,
++                       boost::shared_ptr<WvX509Store> _intermediate_store,
++                       boost::shared_ptr<WvX509Store> _fetched_store,
++                       boost::shared_ptr<WvCRLCache> _crlcache,
+                        UniConf &_cfg) :
+     log("PathFinder"),
+     cfg(_cfg)
+@@ -54,7 +54,7 @@
+     // the option
+     WvString appname = args.getnext();
+     
+-    shared_ptr<WvX509> cert(new WvX509());
++    boost::shared_ptr<WvX509> cert(new WvX509());
+     cert->decode(WvX509::CertHex, certhex);
+     if (!cert->isok())
+     {
+@@ -120,9 +120,9 @@
+                                           intermediate_store,
+                                           fetched_store, crlcache, cfg, 
+                                           cb);
+-    shared_ptr<PathValidator> validator(pv);
++    boost::shared_ptr<PathValidator> validator(pv);
+     validatormap.insert(
+-        pair< WvDBusMsg *, shared_ptr<PathValidator> >(reply, validator));
++        pair< WvDBusMsg *, boost::shared_ptr<PathValidator> >(reply, validator));
+ 
+     switch(cfg["Verification Options"].xgetint("Use OCSP", 1))
+     {
+@@ -143,7 +143,7 @@
+ }
+ 
+ 
+-void PathServer::path_validated_cb(shared_ptr<WvX509> &cert, bool valid, 
++void PathServer::path_validated_cb(boost::shared_ptr<WvX509> &cert, bool valid, 
+                                    WvError err, WvDBusConn *conn, 
+                                    WvDBusMsg *reply)
+ {
+--- pathfinder-1.1.7.orig/pathvalidator.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/pathvalidator.cc	2018-09-26 16:04:03.458084341 +0200
+@@ -15,13 +15,13 @@
+ using namespace std;
+ 
+ 
+-PathValidator::PathValidator(shared_ptr<WvX509> &_cert,
++PathValidator::PathValidator(boost::shared_ptr<WvX509> &_cert,
+                              WvStringParm _initial_policy_set_tcl, 
+                              uint32_t _validation_flags,
+-                             shared_ptr<WvX509Store> &_trusted_store,
+-                             shared_ptr<WvX509Store> &_intermediate_store,
+-                             shared_ptr<WvX509Store> &_fetched_store,
+-                             shared_ptr<WvCRLCache> &_crlcache,
++                             boost::shared_ptr<WvX509Store> &_trusted_store,
++                             boost::shared_ptr<WvX509Store> &_intermediate_store,
++                             boost::shared_ptr<WvX509Store> &_fetched_store,
++                             boost::shared_ptr<WvCRLCache> &_crlcache,
+                              UniConf &_cfg, 
+                              ValidatedCb _cb) :
+     cert_to_be_validated(_cert),
+@@ -41,12 +41,12 @@
+ 
+ void PathValidator::validate(bool check_ocsp)
+ {
+-    shared_ptr<WvX509> cert(certs_to_be_validated.front());
++    boost::shared_ptr<WvX509> cert(certs_to_be_validated.front());
+     certs_to_be_validated.pop_front();
+     
+     PathFoundCb cb = wv::bind(&PathValidator::path_found_cb, this, _1, _2, 
+                               cert);
+-    shared_ptr<PathFinder> pathfinder(new PathFinder(cert,
++    boost::shared_ptr<PathFinder> pathfinder(new PathFinder(cert,
+                                                      trusted_store,
+                                                      intermediate_store,
+                                                      fetched_store,
+@@ -60,8 +60,8 @@
+ }
+ 
+ 
+-void PathValidator::path_found_cb(shared_ptr<WvX509Path> &path, WvError err, 
+-                                  shared_ptr<WvX509> &cert)
++void PathValidator::path_found_cb(boost::shared_ptr<WvX509Path> &path, WvError err, 
++                                  boost::shared_ptr<WvX509> &cert)
+ {
+     if (!err.isok())
+     {
+--- pathfinder-1.1.7.orig/x509path/wvx509path.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/x509path/wvx509path.cc	2018-09-26 15:55:38.668455494 +0200
+@@ -36,21 +36,21 @@
+ }
+ 
+ 
+-void WvX509Path::prepend_cert(shared_ptr<WvX509> &x509)
++void WvX509Path::prepend_cert(boost::shared_ptr<WvX509> &x509)
+ {
+     log("Prepending cert %s to path.\n", x509->get_subject());
+     x509_list.push_front(x509);
+ }
+ 
+ 
+-void WvX509Path::append_cert(shared_ptr<WvX509> &x509)
++void WvX509Path::append_cert(boost::shared_ptr<WvX509> &x509)
+ {
+     log("Appending cert %s to path.\n", x509->get_subject());
+     x509_list.push_back(x509);
+ }
+ 
+ 
+-void WvX509Path::add_crl(WvStringParm subject, shared_ptr<WvCRL> &crl)
++void WvX509Path::add_crl(WvStringParm subject, boost::shared_ptr<WvCRL> &crl)
+ {
+     log("Adding a CRL for %s.\n", subject);
+     crl_map.insert(CRLPair(subject.cstr(), crl));
+@@ -58,14 +58,14 @@
+ 
+ 
+ void WvX509Path::add_ocsp_resp(WvStringParm subject,
+-                               shared_ptr<WvOCSPResp> &ocsp)
++                               boost::shared_ptr<WvOCSPResp> &ocsp)
+ {
+     log("Adding an OCSP response for %s.\n", subject);
+     ocsp_map.insert(OCSPRespPair(subject.cstr(), ocsp));
+ }
+ 
+ 
+-void validate_crl(WvX509Store *store, shared_ptr<WvX509> &x509)
++void validate_crl(WvX509Store *store, boost::shared_ptr<WvX509> &x509)
+ {
+     WvX509Path crlpath;
+ }
+@@ -78,9 +78,9 @@
+ }
+ 
+ 
+-bool WvX509Path::validate(shared_ptr<WvX509Store> &trusted_store, 
+-                          shared_ptr<WvX509Store> &intermediate_store,
+-                          shared_ptr<WvX509Store> &fetched_store,
++bool WvX509Path::validate(boost::shared_ptr<WvX509Store> &trusted_store, 
++                          boost::shared_ptr<WvX509Store> &intermediate_store,
++                          boost::shared_ptr<WvX509Store> &fetched_store,
+                           WvStringList &initial_policy_set, 
+                           uint32_t flags, 
+                           WvX509List &extra_certs_to_be_validated,
+@@ -112,7 +112,7 @@
+     // find one, we can't continue
+     WvString trusted_aki = (*(x509_list.begin()))->get_aki();
+     WvString trusted_issuer = (*(x509_list.begin()))->get_issuer();
+-    shared_ptr<WvX509> prev;
++    boost::shared_ptr<WvX509> prev;
+     if (!!trusted_aki) // look up with aki if we can, more reliable
+         prev = trusted_store->get(trusted_aki);    
+     else
+@@ -130,7 +130,7 @@
+     WvX509PolicyTree policy_tree;
+     int policy_level = 0;
+ 
+-    shared_ptr<WvX509> cur;
++    boost::shared_ptr<WvX509> cur;
+     bool was_self_issued = false;
+     WvX509List::iterator i = x509_list.begin();
+     int count = 0;
+@@ -183,7 +183,7 @@
+                              cur->get_subject());
+             if (iterpair.first != iterpair.second)
+             {
+-                shared_ptr<WvOCSPResp> resp = (*iterpair.first).second;
++                boost::shared_ptr<WvOCSPResp> resp = (*iterpair.first).second;
+                 WvX509 resp_signer = resp->get_signing_cert();
+                 
+                 WvOCSPResp::Status status = resp->get_status(*cur, *prev);
+@@ -276,7 +276,7 @@
+                                         NID_id_pkix_OCSP_noCheck, -1) < 0)
+                 {
+                     extra_certs_to_be_validated.push_back(
+-                        shared_ptr<WvX509>(new WvX509(resp_signer)));
++                        boost::shared_ptr<WvX509>(new WvX509(resp_signer)));
+                 }
+                 else
+                 {
+@@ -299,7 +299,7 @@
+             bool one_valid_crl = false;
+             for (CRLMap::iterator j = iterpair.first; j != iterpair.second; j++)
+             {
+-                shared_ptr<WvCRL> crl = (*j).second;
++                boost::shared_ptr<WvCRL> crl = (*j).second;
+ 
+                 // we need to trim spaces and convert to lower case: 
+                 // differences in spacing or case shouldn't make a difference 
+@@ -313,7 +313,7 @@
+                 WvString crl_aki = crl->get_aki();
+                 bool crl_signer_untrusted = false;
+ 
+-                shared_ptr<WvX509> crl_signer;
++                boost::shared_ptr<WvX509> crl_signer;
+                 if (prev->get_ski() == crl_aki)
+                     crl_signer = prev;
+                 if (!crl_signer && prev_issuer == crl_issuer)
+--- pathfinder-1.1.7.orig/x509path/wvx509store.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/x509path/wvx509store.cc	2018-09-26 16:02:13.875709308 +0200
+@@ -50,7 +50,7 @@
+ }
+ 
+ 
+-void WvX509Store::add_cert(shared_ptr<WvX509> &x)
++void WvX509Store::add_cert(boost::shared_ptr<WvX509> &x)
+ {
+     if (!!x->get_ski())
+         certmap.insert(CertPair(x->get_ski().cstr(), x));
+@@ -75,7 +75,7 @@
+ 
+ void WvX509Store::add_file(WvStringParm _fname)
+ {
+-    shared_ptr<WvX509> x(new WvX509);
++    boost::shared_ptr<WvX509> x(new WvX509);
+ 
+     x->decode(guess_encoding(_fname), _fname);
+     
+@@ -130,7 +130,7 @@
+ 	int numcerts = sk_X509_num(certs);
+ 	for (int i = 0; i<numcerts; i++)
+ 	{
+-            shared_ptr<WvX509> x(new WvX509(X509_dup(sk_X509_value(certs, i))));
++            boost::shared_ptr<WvX509> x(new WvX509(X509_dup(sk_X509_value(certs, i))));
+             add_cert(x);
+         }
+     }
+@@ -141,7 +141,7 @@
+ }
+ 
+ 
+-shared_ptr<WvX509> WvX509Store::get(WvStringParm key)
++boost::shared_ptr<WvX509> WvX509Store::get(WvStringParm key)
+ {
+     if (!!key)
+     {        
+@@ -151,7 +151,7 @@
+         for (CertMap::iterator i = iterpair.first; i != iterpair.second; i++)
+         {
+             // don't return any that are expired; in fact remove them
+-            shared_ptr<WvX509> x = (*i).second;
++            boost::shared_ptr<WvX509> x = (*i).second;
+             if (x->validate() == false)
+                 remove(x->get_serial(true), x->get_subject());
+             else
+@@ -159,7 +159,7 @@
+         }
+     }
+ 
+-    return shared_ptr<WvX509>();
++    return boost::shared_ptr<WvX509>();
+ }
+ 
+ void WvX509Store::get(WvStringParm key, WvX509List &certlist)
+@@ -177,7 +177,7 @@
+ 
+ bool WvX509Store::exists(WvX509 * cert)
+ {
+-    shared_ptr<WvX509> cacert;
++    boost::shared_ptr<WvX509> cacert;
+     cacert = get(cert->get_subject());
+     if (!cacert)
+         cacert = get(cert->get_ski());
+@@ -205,11 +205,11 @@
+ 
+ bool WvX509Store::exists(WvStringParm key)
+ {
+-    return (get(key));
++    return (!!get(key));
+ }
+ 
+ 
+-void WvX509Store::get_cross_certs(shared_ptr<WvX509> &cert,
++void WvX509Store::get_cross_certs(boost::shared_ptr<WvX509> &cert,
+                                   WvX509List &certlist)
+ {
+     for (CertMap::iterator i = certmap.begin();
+@@ -240,7 +240,7 @@
+         CertMap::iterator i;
+         for (i=certmap.begin(); i!=certmap.end(); i++)
+         {
+-            shared_ptr<WvX509> x = ((*i).second);
++            boost::shared_ptr<WvX509> x = ((*i).second);
+             if (x->get_serial(true) == serial && x->get_subject() == subject)
+             {
+                 WvString fname("%s/%s-%s", storedir, x->get_serial(true),

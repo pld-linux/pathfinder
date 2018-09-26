@@ -18,6 +18,7 @@ Source3:	pathfinderd.ini
 Patch0:		%{name}-c++.patch
 Patch1:		%{name}-link.patch
 Patch2:		%{name}-libdir.patch
+Patch3:		%{name}-shared_ptr.patch
 URL:		http://code.google.com/p/pathfinder-pki/
 BuildRequires:	cmake >= 2.4.7
 BuildRequires:	dbus-devel >= 1
@@ -176,6 +177,7 @@ Statyczna biblioteka wtyczki PathFinder dla OpenSSL.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 # out-of-tree build is broken (missing -I$builddir)
