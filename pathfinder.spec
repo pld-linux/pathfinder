@@ -6,7 +6,7 @@ Summary:	PathFinder PKI Path Discovery and Validation Daemon
 Summary(pl.UTF-8):	PathFinder - demon do rozpoznawania i sprawdzania poprawności ścieżek PKI
 Name:		pathfinder
 Version:	1.1.7
-Release:	2
+Release:	2.1
 License:	LGPL v2.1 or BSD (libraries), LGPL v2.1 (programs)
 Group:		Libraries
 #Source0Download: http://code.google.com/p/pathfinder-pki/downloads/list
