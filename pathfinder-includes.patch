@@ -1,0 +1,11 @@
+diff -bur pathfinder-1.1.7.orig/openssltest.cc pathfinder-1.1.7/openssltest.cc
+--- pathfinder-1.1.7.orig/openssltest.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/openssltest.cc	2018-09-26 17:04:23.240198966 +0200
+@@ -20,6 +20,7 @@
+ #include <openssl/pkcs12.h>
+ #include <openssl/x509v3.h>
+ #include <assert.h>
++#include <cstring>
+ 
+ #ifdef APPLE
+ #include <strings.h>

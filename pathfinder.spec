@@ -6,7 +6,7 @@ Summary:	PathFinder PKI Path Discovery and Validation Daemon
 Summary(pl.UTF-8):	PathFinder - demon do rozpoznawania i sprawdzania poprawności ścieżek PKI
 Name:		pathfinder
 Version:	1.1.7
-Release:	2.1
+Release:	3
 License:	LGPL v2.1 or BSD (libraries), LGPL v2.1 (programs)
 Group:		Libraries
 #Source0Download: http://code.google.com/p/pathfinder-pki/downloads/list
@@ -19,6 +19,8 @@ Patch0:		%{name}-c++.patch
 Patch1:		%{name}-link.patch
 Patch2:		%{name}-libdir.patch
 Patch3:		%{name}-shared_ptr.patch
+Patch4:		%{name}-includes.patch
+Patch5:		%{name}-openssl.patch
 URL:		http://code.google.com/p/pathfinder-pki/
 BuildRequires:	cmake >= 2.4.7
 BuildRequires:	dbus-devel >= 1
@@ -178,6 +180,8 @@ Statyczna biblioteka wtyczki PathFinder dla OpenSSL.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
+%patch5 -p1
 
 %build
 # out-of-tree build is broken (missing -I$builddir)

@@ -1,0 +1,44 @@
+diff -bur pathfinder-1.1.7.orig/libpathfinder/libpathfinder-openssl.cc pathfinder-1.1.7/libpathfinder/libpathfinder-openssl.cc
+--- pathfinder-1.1.7.orig/libpathfinder/libpathfinder-openssl.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/libpathfinder/libpathfinder-openssl.cc	2018-09-26 17:03:47.638343422 +0200
+@@ -19,10 +19,10 @@
+ 
+ int openssl_verify_cb(X509_STORE_CTX *ctx, void *arg)
+ {
+-    size_t size = i2d_X509(ctx->cert, NULL);
++    size_t size = i2d_X509(X509_STORE_CTX_get0_cert(ctx), NULL);
+     unsigned char *keybuf, *iend;
+     iend = keybuf = new unsigned char[size];
+-    i2d_X509(ctx->cert, &iend);
++    i2d_X509(X509_STORE_CTX_get0_cert(ctx), &iend);
+     char *certdata_str = new char[(size * 2 + 1)];
+     unsigned char *cp = keybuf;
+     char *certdata_str_i = certdata_str;
+diff -bur pathfinder-1.1.7.orig/util.cc pathfinder-1.1.7/util.cc
+--- pathfinder-1.1.7.orig/util.cc	2012-01-03 19:04:40.000000000 +0100
++++ pathfinder-1.1.7/util.cc	2018-09-26 17:00:04.173362564 +0200
+@@ -45,7 +45,7 @@
+ bool is_md(shared_ptr<WvX509> &x509)
+ {	
+     X509 *cert = x509->get_cert();
+-    int alg = OBJ_obj2nid(cert->sig_alg->algorithm);
++    int alg = X509_get_signature_nid(cert);
+     
+     if (alg == NID_md5WithRSAEncryption || alg == NID_md2WithRSAEncryption)
+         return true;
+@@ -56,10 +57,13 @@
+ size_t get_keysize(shared_ptr<WvX509> &x509)
+ {
+     EVP_PKEY *p = X509_get_pubkey(x509->get_cert());
++    const BIGNUM *rsa_n;
+ 
+     // FIXME: this only supports RSA for now.
+-    if (p && p->type == EVP_PKEY_RSA)
+-        return BN_num_bits(p->pkey.rsa->n);
++    if (p && EVP_PKEY_base_id(p) == EVP_PKEY_RSA) {
++	RSA_get0_key( EVP_PKEY_get0_RSA(p), &rsa_n, NULL, NULL);
++	return BN_num_bits(rsa_n);
++    }
+     return 0;
+ }
+ 
